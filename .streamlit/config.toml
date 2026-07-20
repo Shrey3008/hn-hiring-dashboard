@@ -1,0 +1,14 @@
+# UI chrome only — chart colors come from src/theme.py, which uses a
+# separately validated categorical palette. primaryColor is set to the same
+# blue as categorical slot 1 so widgets don't clash with the charts.
+[theme]
+primaryColor = "#2a78d6"
+
+[theme.dark]
+primaryColor = "#3987e5"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false
