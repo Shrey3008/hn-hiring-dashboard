@@ -69,6 +69,20 @@ class UnsafeSQL(ValueError):
     """The model produced SQL that failed a guardrail."""
 
 
+# The model sometimes wraps its refusal as SQL — `SELECT 'UNANSWERABLE'` — which
+# is harmless but renders as a one-row table instead of a message. Seen in
+# practice when a prompt-injection attempt gets refused on the repair attempt.
+UNANSWERABLE_SQL_RE = re.compile(r"^select\s+'?unanswerable'?\s*$", re.IGNORECASE)
+
+
+def is_unanswerable(raw: str) -> bool:
+    stripped = raw.strip().strip("`").strip()
+    return (
+        stripped.upper().startswith("UNANSWERABLE")
+        or bool(UNANSWERABLE_SQL_RE.match(clean_sql(raw)))
+    )
+
+
 def clean_sql(raw: str) -> str:
     """Strip markdown fencing and comments, normalise whitespace.
 
@@ -197,6 +211,9 @@ A: SELECT DISTINCT j.company FROM jobs j JOIN job_tech t ON t.post_id = j.post_i
 Q: How did remote hiring change over time?
 A: SELECT month, ROUND(100.0 * SUM(CASE WHEN work_mode = 'remote' THEN 1 ELSE 0 END) / COUNT(*), 1) AS pct_remote FROM jobs GROUP BY month ORDER BY month
 
+Q: How has the share of posts mentioning Rust changed each month?
+A: WITH monthly_total AS (SELECT month, COUNT(*) AS total FROM jobs GROUP BY month) SELECT j.month, ROUND(COUNT(DISTINCT t.post_id) * 100.0 / m.total, 1) AS pct_posts FROM job_tech t JOIN jobs j ON j.post_id = t.post_id JOIN monthly_total m ON m.month = j.month WHERE t.tech = 'Rust' GROUP BY j.month, m.total ORDER BY j.month
+
 Q: What are the top 10 databases mentioned?
 A: SELECT t.tech, COUNT(DISTINCT t.post_id) AS posts FROM job_tech t JOIN dim_tech d ON d.tech = t.tech WHERE d.category = 'database' GROUP BY t.tech ORDER BY posts DESC LIMIT 10
 
@@ -225,6 +242,12 @@ RULES
 - Read-only. Never write INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, or PRAGMA.
 - Prefer share/percentage over raw counts when comparing across months, because
   monthly thread sizes differ.
+- CRITICAL — row fan-out: joining `job_tech` to `jobs` multiplies each post into
+  one row per technology (about 2.7x). So COUNT(*) after that join counts tech
+  mentions, NOT posts. When you need a share of POSTS, take the denominator from
+  a separate aggregate over `jobs` alone (see the Rust-per-month example) and
+  count the numerator with COUNT(DISTINCT post_id). Dividing by COUNT(*) after
+  joining job_tech understates every percentage by roughly 3x.
 - Exclude NULL company when listing companies.
 - Alias aggregates with clear names.
 - SQLite has no MEDIAN, STDDEV, or PERCENTILE function. If asked for a median,
@@ -328,7 +351,7 @@ def ask(question: str, engine: Engine | None = None, model: str | None = None) -
     raw = _complete(prompt, question, model)
     result.attempts.append(raw)
 
-    if raw.strip().upper().startswith("UNANSWERABLE"):
+    if is_unanswerable(raw):
         result.unanswerable = True
         result.error = "That question can't be answered from this dataset."
         return result
@@ -351,6 +374,11 @@ def ask(question: str, engine: Engine | None = None, model: str | None = None) -
         try:
             raw2 = _complete(prompt, repair, model)
             result.attempts.append(raw2)
+            if is_unanswerable(raw2):
+                result.unanswerable = True
+                result.error = "That question can't be answered from this dataset."
+                result.sql = None
+                return result
             sql2 = validate_sql(raw2)
             result.sql = sql2
             result.df = run_sql(sql2)
