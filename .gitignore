@@ -6,10 +6,12 @@ __pycache__/
 .env
 .streamlit/secrets.toml
 
-# Local database. Phase 5 decides whether a built .db gets committed
-# for deployment or whether the app points at Neon instead.
-data/*.db
+# The full local build is rebuildable from the API — keep it out of git.
+# data/snapshot.db is the committed read-only deploy artifact (see
+# scripts/build_snapshot.py) and is deliberately NOT ignored.
+data/hn_hiring.db
 data/*.db-journal
+data/*.db-wal
 
 .DS_Store
 .ipynb_checkpoints/

@@ -34,7 +34,11 @@ from sqlalchemy.engine import Engine
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_ROOT / "data"
+
+# Full local build (gitignored) — what the ETL writes.
 DEFAULT_DB_PATH = DATA_DIR / "hn_hiring.db"
+# Committed read-only snapshot — what a fresh clone and the deployed app get.
+SNAPSHOT_DB_PATH = DATA_DIR / "snapshot.db"
 
 metadata = MetaData()
 
@@ -120,15 +124,26 @@ dim_tech = Table(
 
 
 def get_database_url() -> str:
-    """Return DATABASE_URL if set, else a local SQLite file.
+    """Resolve the database, in precedence order.
 
-    Set DATABASE_URL to a Neon connection string to switch storage backends:
-        postgresql+psycopg://user:pass@host/db?sslmode=require
+    1. DATABASE_URL — set this to a Neon connection string to switch backends:
+       postgresql+psycopg://user:pass@host/db?sslmode=require
+    2. data/hn_hiring.db — the full local build, if the ETL has been run.
+    3. data/snapshot.db — the committed read-only snapshot.
+
+    Order matters: a developer who has run the ETL gets their own fresh data,
+    while a fresh clone or the deployed app falls through to the snapshot and
+    works with no setup at all.
     """
     url = os.environ.get("DATABASE_URL")
     if url:
         return url
     DATA_DIR.mkdir(exist_ok=True)
+    if DEFAULT_DB_PATH.exists():
+        return f"sqlite:///{DEFAULT_DB_PATH}"
+    if SNAPSHOT_DB_PATH.exists():
+        return f"sqlite:///{SNAPSHOT_DB_PATH}"
+    # Neither exists yet — return the ETL target so init_db/run_etl can create it.
     return f"sqlite:///{DEFAULT_DB_PATH}"
 
 
