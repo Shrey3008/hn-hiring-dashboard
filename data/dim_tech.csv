@@ -1,0 +1,125 @@
+tech,pattern,category
+Python,"\bpython\b",language
+JavaScript,"\bjavascript\b",language
+TypeScript,"\btypescript\b",language
+Java,"\bjava\b",language
+Go,"\bgolang\b",language
+Rust,"\brust\b",language
+Ruby,"\bruby\b",language
+PHP,"\bphp\b",language
+C++,"c\+\+",language
+C#,"c#|\bc[- ]?sharp\b",language
+Swift,"\bswift\b",language
+Kotlin,"\bkotlin\b",language
+Scala,"\bscala\b",language
+Elixir,"\belixir\b",language
+Erlang,"\berlang\b",language
+Clojure,"\bclojure\b",language
+Haskell,"\bhaskell\b",language
+OCaml,"\bocaml\b",language
+F#,"f#",language
+Perl,"\bperl\b",language
+Julia,"\bjulia\b",language
+Dart,"\bdart\b",language
+Lua,"\blua\b",language
+Zig,"\bzig\b",language
+Objective-C,"\bobjective[- ]?c\b",language
+Solidity,"\bsolidity\b",language
+SQL,"\bsql\b",language
+Bash,"\bbash\b|\bshell scripting\b",language
+React,"\breact\b(?![- ]native)",framework
+React Native,"\breact[- ]native\b",framework
+Vue,"\bvue(\.?js)?\b",framework
+Angular,"\bangular\b",framework
+Svelte,"\bsvelte(kit)?\b",framework
+Next.js,"\bnext\.?js\b",framework
+Node.js,"\bnode\.?js\b",framework
+Django,"\bdjango\b",framework
+Flask,"\bflask\b",framework
+FastAPI,"\bfastapi\b",framework
+Rails,"\brails\b",framework
+Spring,"\bspring ?(boot)?\b",framework
+Laravel,"\blaravel\b",framework
+Express,"\bexpress(\.?js)?\b",framework
+NestJS,"\bnest\.?js\b",framework
+Phoenix,"\bphoenix\b",framework
+.NET,"\.net\b|\bdotnet\b",framework
+ASP.NET,"\basp\.net\b",framework
+jQuery,"\bjquery\b",framework
+Tailwind,"\btailwind( ?css)?\b",framework
+Bootstrap,"\bbootstrap\b",framework
+Flutter,"\bflutter\b",framework
+Unity,"\bunity\b",framework
+Unreal,"\bunreal( engine)?\b",framework
+iOS,"\bios\b",framework
+Android,"\bandroid\b",framework
+WebAssembly,"\bwebassembly\b|\bwasm\b",framework
+pandas,"\bpandas\b",data
+NumPy,"\bnumpy\b",data
+PyTorch,"\bpytorch\b",data
+TensorFlow,"\btensorflow\b",data
+scikit-learn,"\bscikit[- ]?learn\b|\bsklearn\b",data
+Spark,"\b(apache )?spark\b",data
+Hadoop,"\bhadoop\b",data
+Kafka,"\bkafka\b",data
+Airflow,"\bairflow\b",data
+dbt,"\bdbt\b",data
+Flink,"\bflink\b",data
+Hive,"\bhive\b",data
+Trino,"\btrino\b|\bpresto\b",data
+LangChain,"\blangchain\b",data
+Hugging Face,"\bhugging ?face\b",data
+LLM,"\bllms?\b|\blarge language models?\b",data
+RAG,"\brag\b|\bretrieval[- ]augmented\b",data
+MLOps,"\bmlops\b",data
+Machine Learning,"\bmachine learning\b|\bml engineer\b",data
+Computer Vision,"\bcomputer vision\b",data
+NLP,"\bnlp\b|\bnatural language processing\b",data
+PostgreSQL,"\bpostgres(ql)?\b",database
+MySQL,"\bmysql\b",database
+SQLite,"\bsqlite\b",database
+MongoDB,"\bmongo(db)?\b",database
+Redis,"\bredis\b",database
+Elasticsearch,"\belastic ?search\b|\belk stack\b",database
+Cassandra,"\bcassandra\b",database
+DynamoDB,"\bdynamo ?db\b",database
+Neo4j,"\bneo4j\b",database
+ClickHouse,"\bclickhouse\b",database
+BigQuery,"\bbig ?query\b",database
+Snowflake,"\bsnowflake\b",database
+Databricks,"\bdatabricks\b",database
+Redshift,"\bredshift\b",database
+MariaDB,"\bmaria ?db\b",database
+CockroachDB,"\bcockroach ?db\b",database
+Supabase,"\bsupabase\b",database
+AWS,"\baws\b|\bamazon web services\b",cloud
+GCP,"\bgcp\b|\bgoogle cloud\b",cloud
+Azure,"\bazure\b",cloud
+Kubernetes,"\bkubernetes\b|\bk8s\b",cloud
+Docker,"\bdocker\b",cloud
+Terraform,"\bterraform\b",cloud
+Ansible,"\bansible\b",cloud
+Serverless,"\bserverless\b|\blambda functions?\b",cloud
+Vercel,"\bvercel\b",cloud
+Netlify,"\bnetlify\b",cloud
+Heroku,"\bheroku\b",cloud
+Cloudflare,"\bcloudflare\b",cloud
+Nginx,"\bnginx\b",cloud
+Linux,"\blinux\b",cloud
+Jenkins,"\bjenkins\b",tooling
+GitHub Actions,"\bgithub actions\b",tooling
+GitLab CI,"\bgitlab ci\b",tooling
+CircleCI,"\bcircle ?ci\b",tooling
+Git,"\bgit\b",tooling
+GraphQL,"\bgraphql\b",tooling
+gRPC,"\bgrpc\b",tooling
+REST API,"\brestful\b|\brest api\b",tooling
+RabbitMQ,"\brabbit ?mq\b",tooling
+Celery,"\bcelery\b",tooling
+Webpack,"\bwebpack\b",tooling
+Vite,"\bvite\b",tooling
+Prometheus,"\bprometheus\b",tooling
+Grafana,"\bgrafana\b",tooling
+Datadog,"\bdatadog\b",tooling
+Figma,"\bfigma\b",tooling
+Salesforce,"\bsalesforce\b",tooling

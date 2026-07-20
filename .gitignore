@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets — never commit
+.env
+.streamlit/secrets.toml
+
+# Local database. Phase 5 decides whether a built .db gets committed
+# for deployment or whether the app points at Neon instead.
+data/*.db
+data/*.db-journal
+
+.DS_Store
+.ipynb_checkpoints/
+
+# Machine-local Claude Code settings
+.claude/settings.local.json
