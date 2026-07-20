@@ -18,6 +18,7 @@ import streamlit as st
 
 from src import queries as q
 from src.db import get_engine
+from src.nl_query import MissingAPIKey, ask, get_model
 from src.theme import (
     WORK_MODE_ORDER,
     altair_config,
@@ -102,7 +103,7 @@ DARK = is_dark()
 P = palette(DARK)
 
 
-def show_chart(chart, key: str, data: pd.DataFrame, caption: str | None = None):
+def show_chart(chart, data: pd.DataFrame, caption: str | None = None):
     """Render a chart with its table view.
 
     theme=None matters: Streamlit's default chart theme would override the
@@ -175,6 +176,111 @@ c5.metric("Latest month", str(k["latest_month"])[:7] if k["latest_month"] else "
 st.divider()
 
 # --------------------------------------------------------------------------
+# Ask a question (LLM -> SQL)
+# --------------------------------------------------------------------------
+
+st.subheader("Ask a question")
+st.caption(
+    "Plain English is translated to SQL by an LLM, then run against a read-only "
+    "connection. The generated SQL is always shown — check it before trusting "
+    "the answer."
+)
+
+EXAMPLES = [
+    "Which companies mentioned Rust most often?",
+    "How has the share of posts mentioning LLM changed each month?",
+    "What are the top 10 databases in remote jobs?",
+    "Which months had the highest share of onsite roles?",
+]
+
+if "nl_question" not in st.session_state:
+    st.session_state.nl_question = ""
+
+ex_cols = st.columns(len(EXAMPLES))
+for col, example in zip(ex_cols, EXAMPLES):
+    if col.button(example, use_container_width=True, key=f"ex_{example[:20]}"):
+        st.session_state.nl_question = example
+
+with st.form("nl_form"):
+    question = st.text_input(
+        "Question",
+        value=st.session_state.nl_question,
+        placeholder="e.g. which companies hire for Rust and Kubernetes?",
+        label_visibility="collapsed",
+    )
+    submitted = st.form_submit_button("Run query", type="primary")
+
+if submitted and question.strip():
+    st.session_state.nl_question = question
+    try:
+        with st.spinner(f"Asking {get_model()} ..."):
+            res = ask(question, engine())
+    except MissingAPIKey as exc:
+        st.warning(str(exc))
+        st.code(
+            '# .streamlit/secrets.toml  (gitignored)\n'
+            'GROQ_API_KEY = "gsk_..."\n'
+            '# GROQ_MODEL = "llama-3.3-70b-versatile"   # optional override',
+            language="toml",
+        )
+        res = None
+    except Exception as exc:
+        st.error(f"Query failed: {exc}")
+        res = None
+
+    if res is not None:
+        if res.sql:
+            label = "Generated SQL (repaired after one failed attempt)" \
+                if res.repaired else "Generated SQL"
+            with st.expander(label, expanded=False):
+                st.code(res.sql, language="sql")
+
+        if res.error:
+            st.error(res.error)
+        elif res.df is not None:
+            if res.df.empty:
+                st.info("The query ran but returned no rows.")
+            else:
+                st.dataframe(res.df, use_container_width=True, hide_index=True)
+
+                # Auto-chart only the unambiguous shape: one label column and
+                # one numeric column. Guessing at wider results produces
+                # confident nonsense.
+                if res.df.shape[1] == 2:
+                    label_col, value_col = res.df.columns
+                    if pd.api.types.is_numeric_dtype(res.df[value_col]):
+                        plot = res.df.head(25).copy()
+                        is_time = "month" in str(label_col).lower()
+                        if is_time:
+                            plot[label_col] = pd.to_datetime(plot[label_col])
+                            base = alt.Chart(plot).encode(
+                                alt.X(f"{label_col}:T", title=None,
+                                      axis=alt.Axis(format="%b %Y", labelAngle=0)),
+                                alt.Y(f"{value_col}:Q", title=str(value_col)),
+                            )
+                            auto = (
+                                base.mark_line(strokeWidth=2, color=P["categorical"][0])
+                                + base.mark_point(size=60, filled=True,
+                                                  color=P["categorical"][0])
+                            )
+                        else:
+                            auto = alt.Chart(plot).mark_bar(
+                                color=P["categorical"][0],
+                                cornerRadiusEnd=4,
+                                height=alt.RelativeBandSize(0.72),
+                            ).encode(
+                                alt.X(f"{value_col}:Q", title=str(value_col)),
+                                alt.Y(f"{label_col}:N", title=None, sort="-x"),
+                            )
+                        st.altair_chart(
+                            altair_config(auto.properties(height=280), DARK),
+                            use_container_width=True,
+                            theme=None,
+                        )
+
+st.divider()
+
+# --------------------------------------------------------------------------
 # 1. Hiring volume
 # --------------------------------------------------------------------------
 
@@ -198,8 +304,7 @@ vol_chart = (
     )
 ).properties(height=CHART_HEIGHT)
 
-show_chart(
-    vol_chart, "volume", vol,
+show_chart(vol_chart, vol,
     "Posts per monthly thread. Thread size varies enough (258–415) that every "
     "other chart normalizes against it rather than using raw counts.",
 )
@@ -246,8 +351,7 @@ wm_chart = (
     .properties(height=CHART_HEIGHT)
 )
 
-show_chart(
-    wm_chart, "work_mode", wm,
+show_chart(wm_chart, wm,
     "Ignores the sidebar work-mode filter by design — filtering a composition "
     "chart by the dimension it decomposes would always render one solid band. "
     "*unknown* is missing data, not a category, so it wears neutral gray.",
@@ -312,8 +416,7 @@ else:
     )
 
     tech_chart = (tt_line + tt_pts + tt_labels).properties(height=CHART_HEIGHT + 40)
-    show_chart(
-        tech_chart, "tech_trend", tt,
+    show_chart(tech_chart, tt,
         "Share of that month's posts mentioning each technology — not raw "
         "counts, which would show thread-size noise as a hiring trend.",
     )
@@ -348,7 +451,7 @@ top_chart = (
     )
     .properties(height=460)
 )
-show_chart(top_chart, "top_tech", top)
+show_chart(top_chart, top)
 
 # --------------------------------------------------------------------------
 # 5. Salary — demoted, collapsed
@@ -380,7 +483,7 @@ with st.expander("Show salary charts"):
             ]
         )
     ).properties(height=240)
-    show_chart(sal_chart, "salary_pct", sal)
+    show_chart(sal_chart, sal)
 
     # Separate chart, not a second axis on the one above. Two measures of
     # different scale never share a y-axis.
@@ -398,7 +501,7 @@ with st.expander("Show salary charts"):
             ]
         )
     ).properties(height=240)
-    show_chart(mid_chart, "salary_mid", sal[["month", "avg_midpoint"]])
+    show_chart(mid_chart, sal[["month", "avg_midpoint"]])
 
 # --------------------------------------------------------------------------
 # Jobs table
