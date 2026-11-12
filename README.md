@@ -1,5 +1,7 @@
 # Hacker News Hiring Trends
 
+[![CI](https://github.com/Shrey3008/hn-hiring-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/Shrey3008/hn-hiring-dashboard/actions/workflows/ci.yml)
+
 An end-to-end analytics project over **11,885 job posts** from 36 months of Hacker
 News *"Ask HN: Who is hiring?"* threads (Aug 2023 – Jul 2026): a Python/pandas ETL
 that parses unstructured free text into a relational schema, a Streamlit dashboard,
@@ -137,6 +139,27 @@ Adversarial prompts (direct injection, *"delete every row"*, a legitimate questi
 with a `DROP` rider appended, `PRAGMA`) were all refused or answered safely, with row
 counts unchanged afterward.
 
+### Measuring correctness: a 25-case eval set
+
+Guardrails stop unsafe SQL; nothing in them stops SQL that is safe and wrong. So the
+natural-language feature has an evaluation harness (`src/evals/`, details in
+[`src/evals/README.md`](src/evals/README.md)):
+
+- **25 questions, each with a reference SQL query.** The model's query and the
+  reference both run against the same read-only database and the *results* are
+  compared, never the SQL text.
+- **Saved baseline:** `openai/gpt-oss-120b` passed **24 of 25 (96%)** on 2026-09-23
+  (`eval_results/baseline.json`). The one failure is the kind this project exists to
+  catch: *"What percentage of posts in 2026 mentioned Python?"* has a true answer of
+  24.9%, and the model's query ran without error but returned a different number.
+- **The harness is tested too.** `scripts/test_eval_harness.py` swaps the model for
+  three fakes (always right, reintroduces the fan-out bug, invents answers) and
+  asserts the scores move exactly as they should: 19 assertions, no API key.
+- **CI:** every push runs the guardrail checks, validates the eval set and runs the
+  harness calibration. The live model run against the baseline
+  (`run_evals.py --baseline ... --min-accuracy 0.80`, exit code 1 on a regression) is
+  a manually started workflow job that needs a `GROQ_API_KEY` repository secret.
+
 ### The schema in the prompt is generated, never written
 
 The DDL handed to the LLM is compiled from live SQLAlchemy metadata. A hand-maintained
@@ -247,7 +270,7 @@ Get a free key at [console.groq.com](https://console.groq.com):
 ```toml
 # .streamlit/secrets.toml   (gitignored)
 GROQ_API_KEY = "gsk_..."
-# GROQ_MODEL = "llama-3.3-70b-versatile"   # optional override
+# GROQ_MODEL = "openai/gpt-oss-120b"       # optional override
 ```
 
 Groq retires model ids periodically. If the default 404s:
@@ -261,6 +284,9 @@ python -c "import sys; sys.path.insert(0,'.'); \
 
 ```bash
 python scripts/test_guardrails.py    # 30 checks, no API key needed
+python scripts/run_evals.py --dry-run # validates the 25-case eval set, no API key
+python scripts/test_eval_harness.py  # 19 harness-calibration assertions, no API key
+python scripts/run_evals.py          # live eval: one Groq API call per case
 ```
 
 ---
@@ -302,12 +328,15 @@ src/
   queries.py                  chart-backing SQL
   theme.py                    validated chart palette
   nl_query.py                 LLM -> SQL, guardrails, execution
+  evals/                      25-case eval set, runner, result comparator
 scripts/
   init_db.py                  create schema, load tech keywords
   run_etl.py                  fetch + parse
   parse_report.py             extraction-quality report
   build_snapshot.py           build the committed deploy database
   test_guardrails.py          SQL guardrail tests
+  run_evals.py                run the eval set (dry run, live, baseline gate)
+  test_eval_harness.py        calibrates the eval harness with fake models
   capture_screenshots.py      README screenshots (dev only)
 data/
   dim_tech.csv                124 technology keywords + regexes
@@ -315,4 +344,4 @@ data/
 ```
 
 **Stack:** Python 3.12 · pandas · SQLAlchemy Core · SQLite · Streamlit · Altair ·
-Groq (Llama 3.3 70B) · Algolia HN API
+Groq (openai/gpt-oss-120b) · Algolia HN API

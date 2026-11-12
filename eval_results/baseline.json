@@ -1,0 +1,494 @@
+{
+  "started_at": "2026-09-23T22:08:00+00:00",
+  "model": "openai/gpt-oss-120b",
+  "total": 25,
+  "passed": 24,
+  "accuracy": 0.96,
+  "by_tag": {
+    "aggregate": {
+      "total": 4,
+      "passed": 4,
+      "accuracy": 1.0
+    },
+    "basic": {
+      "total": 6,
+      "passed": 6,
+      "accuracy": 1.0
+    },
+    "fan_out": {
+      "total": 9,
+      "passed": 8,
+      "accuracy": 0.8889
+    },
+    "filter": {
+      "total": 4,
+      "passed": 4,
+      "accuracy": 1.0
+    },
+    "join": {
+      "total": 4,
+      "passed": 4,
+      "accuracy": 1.0
+    },
+    "ranking": {
+      "total": 3,
+      "passed": 3,
+      "accuracy": 1.0
+    },
+    "salary": {
+      "total": 3,
+      "passed": 3,
+      "accuracy": 1.0
+    },
+    "share": {
+      "total": 8,
+      "passed": 7,
+      "accuracy": 0.875
+    },
+    "spelling": {
+      "total": 2,
+      "passed": 2,
+      "accuracy": 1.0
+    },
+    "time_series": {
+      "total": 5,
+      "passed": 5,
+      "accuracy": 1.0
+    },
+    "unanswerable": {
+      "total": 2,
+      "passed": 2,
+      "accuracy": 1.0
+    }
+  },
+  "repair_rate": 0.0,
+  "latency_p50_ms": 1973,
+  "latency_p95_ms": 14552,
+  "cases": [
+    {
+      "id": "total_posts",
+      "question": "How many job posts are in the dataset?",
+      "tags": [
+        "basic",
+        "aggregate"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 1383,
+      "sql": "SELECT COUNT(*) AS total_posts FROM jobs",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "posts_per_month",
+      "question": "How many posts are there each month?",
+      "tags": [
+        "basic",
+        "time_series"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 600,
+      "sql": "SELECT month, COUNT(*) AS posts FROM jobs GROUP BY month ORDER BY month",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 36,
+      "actual_rows": 36,
+      "error": null
+    },
+    {
+      "id": "hybrid_count",
+      "question": "How many posts are hybrid?",
+      "tags": [
+        "basic",
+        "filter"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 646,
+      "sql": "SELECT COUNT(*) AS hybrid_posts FROM jobs WHERE work_mode = 'hybrid'",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "month_range",
+      "question": "What is the earliest and latest month covered by the data?",
+      "tags": [
+        "basic",
+        "aggregate"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 636,
+      "sql": "SELECT MIN(month) AS earliest_month, MAX(month) AS latest_month FROM jobs",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "tech_count",
+      "question": "How many technologies are tracked in the lookup table?",
+      "tags": [
+        "basic",
+        "aggregate"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 523,
+      "sql": "SELECT COUNT(*) AS tech_count FROM dim_tech",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "database_category",
+      "question": "Which technologies are in the database category?",
+      "tags": [
+        "basic",
+        "filter"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 679,
+      "sql": "SELECT tech FROM dim_tech WHERE category = 'database' ORDER BY tech",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 17,
+      "actual_rows": 17,
+      "error": null
+    },
+    {
+      "id": "remote_share_monthly",
+      "question": "What percentage of posts were remote in each month?",
+      "tags": [
+        "share",
+        "time_series"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 5941,
+      "sql": "SELECT month, ROUND(100.0 * SUM(is_remote) / COUNT(*), 1) AS pct_remote FROM jobs GROUP BY month ORDER BY month",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 36,
+      "actual_rows": 36,
+      "error": null
+    },
+    {
+      "id": "salary_disclosure_share",
+      "question": "What percentage of posts disclosed a salary?",
+      "tags": [
+        "share",
+        "salary"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 13043,
+      "sql": "SELECT ROUND(100.0 * SUM(CASE WHEN has_salary = 1 THEN 1 ELSE 0 END) / COUNT(*), 1) AS pct_posts_with_salary FROM jobs",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "structured_header_share",
+      "question": "What share of posts used the structured pipe-delimited header?",
+      "tags": [
+        "share"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 1995,
+      "sql": "SELECT ROUND(100.0 * SUM(parsed_structured) / COUNT(*), 1) AS pct_structured FROM jobs",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "llm_share_monthly",
+      "question": "How has the share of posts mentioning LLM changed each month?",
+      "tags": [
+        "share",
+        "fan_out",
+        "time_series"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 3334,
+      "sql": "WITH monthly_total AS (SELECT month, COUNT(*) AS total FROM jobs GROUP BY month) SELECT j.month, ROUND(COUNT(DISTINCT t.post_id) * 100.0 / m.total, 1) AS pct_posts FROM job_tech t JOIN jobs j ON j.post_id = t.post_id JOIN monthly_total m ON m.month = j.month WHERE t.tech = 'LLM' GROUP BY j.month, m.total ORDER BY j.month",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 36,
+      "actual_rows": 36,
+      "error": null
+    },
+    {
+      "id": "rust_share_monthly",
+      "question": "What share of posts mention Rust each month?",
+      "tags": [
+        "share",
+        "fan_out",
+        "time_series"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 15455,
+      "sql": "WITH monthly_total AS (SELECT month, COUNT(*) AS total FROM jobs GROUP BY month) SELECT j.month, ROUND(COUNT(DISTINCT t.post_id) * 100.0 / m.total, 1) AS pct_posts FROM job_tech t JOIN jobs j ON j.post_id = t.post_id JOIN monthly_total m ON m.month = j.month WHERE t.tech = 'Rust' GROUP BY j.month, m.total ORDER BY j.month",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 36,
+      "actual_rows": 36,
+      "error": null
+    },
+    {
+      "id": "python_share_2026",
+      "question": "What percentage of posts in 2026 mentioned Python?",
+      "tags": [
+        "share",
+        "fan_out"
+      ],
+      "passed": false,
+      "reason": "no actual row contains expected values (24.9,)",
+      "latency_ms": 1683,
+      "sql": "SELECT ROUND(100.0 * COUNT(DISTINCT CASE WHEN t.tech = 'Python' THEN j.post_id END) / COUNT(*), 1) AS pct_python FROM jobs j LEFT JOIN job_tech t ON t.post_id = j.post_id WHERE j.month >= '2026-01-01' AND j.month < '2027-01-01'",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "docker_share_overall",
+      "question": "What share of all posts mention Docker?",
+      "tags": [
+        "share",
+        "fan_out"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 2230,
+      "sql": "SELECT ROUND(100.0 * COUNT(DISTINCT t.post_id) / (SELECT COUNT(*) FROM jobs), 2) AS share_pct FROM job_tech t WHERE t.tech = 'Docker'",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "top_technologies",
+      "question": "What are the top 10 technologies by number of posts mentioning them?",
+      "tags": [
+        "ranking",
+        "fan_out"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 4112,
+      "sql": "SELECT t.tech, COUNT(DISTINCT t.post_id) AS posts FROM job_tech t GROUP BY t.tech ORDER BY posts DESC LIMIT 10",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 10,
+      "actual_rows": 10,
+      "error": null
+    },
+    {
+      "id": "top_databases",
+      "question": "What are the top 5 databases mentioned?",
+      "tags": [
+        "ranking",
+        "fan_out",
+        "join"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 1922,
+      "sql": "SELECT t.tech, COUNT(DISTINCT t.post_id) AS posts FROM job_tech t JOIN dim_tech d ON d.tech = t.tech WHERE d.category = 'database' GROUP BY t.tech ORDER BY posts DESC LIMIT 5",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 5,
+      "actual_rows": 5,
+      "error": null
+    },
+    {
+      "id": "top_companies",
+      "question": "Which companies posted the most jobs?",
+      "tags": [
+        "ranking"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 13045,
+      "sql": "SELECT company, COUNT(*) AS posts FROM jobs WHERE company IS NOT NULL GROUP BY company ORDER BY posts DESC LIMIT 20",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 20,
+      "actual_rows": 20,
+      "error": null
+    },
+    {
+      "id": "companies_using_rust_2026",
+      "question": "Which companies mentioned Rust in 2026?",
+      "tags": [
+        "join",
+        "filter"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 14505,
+      "sql": "SELECT DISTINCT j.company FROM jobs j JOIN job_tech t ON t.post_id = j.post_id WHERE t.tech = 'Rust' AND j.month >= '2026-01-01' AND j.company IS NOT NULL ORDER BY j.company",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 106,
+      "actual_rows": 106,
+      "error": null
+    },
+    {
+      "id": "python_and_aws",
+      "question": "How many posts mention both Python and AWS?",
+      "tags": [
+        "join",
+        "fan_out"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 1020,
+      "sql": "SELECT COUNT(*) AS post_count FROM (SELECT post_id FROM job_tech WHERE tech IN ('Python','AWS') GROUP BY post_id HAVING COUNT(DISTINCT tech) = 2)",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "distinct_companies_2025",
+      "question": "How many distinct companies posted in 2025? Treat names that differ only by capitalisation or surrounding whitespace as the same company.",
+      "tags": [
+        "aggregate",
+        "filter"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 1973,
+      "sql": "SELECT COUNT(DISTINCT LOWER(TRIM(company))) AS company_count FROM jobs WHERE month >= '2025-01-01' AND month < '2026-01-01' AND company IS NOT NULL",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "kubernetes_salary",
+      "question": "What is the average salary midpoint for posts mentioning Kubernetes?",
+      "tags": [
+        "salary",
+        "join"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 14552,
+      "sql": "SELECT AVG((j.salary_min + j.salary_max) / 2.0) AS avg_midpoint, COUNT(*) AS n FROM jobs j JOIN job_tech t ON t.post_id = j.post_id WHERE t.tech = 'Kubernetes' AND j.has_salary = 1",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "salary_disclosure_monthly",
+      "question": "What percentage of posts disclosed a salary in each month?",
+      "tags": [
+        "share",
+        "salary",
+        "time_series"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 1765,
+      "sql": "SELECT month, ROUND(100.0 * SUM(CASE WHEN has_salary = 1 THEN 1 ELSE 0 END) / COUNT(*), 1) AS pct_salary_disclosed FROM jobs GROUP BY month ORDER BY month",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 36,
+      "actual_rows": 36,
+      "error": null
+    },
+    {
+      "id": "postgresql_spelling",
+      "question": "How many posts mention PostgreSQL?",
+      "tags": [
+        "spelling",
+        "fan_out"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 2019,
+      "sql": "SELECT COUNT(DISTINCT t.post_id) AS post_count FROM job_tech t WHERE t.tech = 'PostgreSQL'",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "typescript_spelling",
+      "question": "How many posts mention TypeScript?",
+      "tags": [
+        "spelling",
+        "fan_out"
+      ],
+      "passed": true,
+      "reason": "all expected rows matched",
+      "latency_ms": 533,
+      "sql": "SELECT COUNT(DISTINCT post_id) AS post_count FROM job_tech WHERE tech = 'TypeScript'",
+      "repaired": false,
+      "unanswerable": false,
+      "expected_rows": 1,
+      "actual_rows": 1,
+      "error": null
+    },
+    {
+      "id": "unanswerable_stock_price",
+      "question": "What is the current stock price of each company that posted?",
+      "tags": [
+        "unanswerable"
+      ],
+      "passed": true,
+      "reason": "correctly declined",
+      "latency_ms": 13752,
+      "sql": null,
+      "repaired": false,
+      "unanswerable": true,
+      "expected_rows": 0,
+      "actual_rows": 0,
+      "error": "That question can't be answered from this dataset."
+    },
+    {
+      "id": "unanswerable_applicants",
+      "question": "How many people applied to each job posting?",
+      "tags": [
+        "unanswerable"
+      ],
+      "passed": true,
+      "reason": "correctly declined",
+      "latency_ms": 1048,
+      "sql": null,
+      "repaired": false,
+      "unanswerable": true,
+      "expected_rows": 0,
+      "actual_rows": 0,
+      "error": "That question can't be answered from this dataset."
+    }
+  ]
+}

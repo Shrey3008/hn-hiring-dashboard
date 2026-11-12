@@ -18,3 +18,7 @@ data/*.db-wal
 
 # Machine-local Claude Code settings
 .claude/settings.local.json
+
+# Eval reports are run artifacts; commit only a chosen baseline.
+eval_results/*
+!eval_results/baseline.json

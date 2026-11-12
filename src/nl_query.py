@@ -40,7 +40,11 @@ from sqlalchemy.schema import CreateTable
 
 from src.db import dim_tech, get_engine, job_tech, jobs, raw_posts, threads
 
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+# Groq retires model ids periodically. llama-3.3-70b-versatile was retired by
+# Sep 2026 and returns a 404; no Llama chat model remains on the platform.
+# openai/gpt-oss-120b scored 96% on the eval set (scripts/run_evals.py).
+# If this 404s, run: python -c "import sys;sys.path.insert(0,'.');from src.nl_query import available_models;print(*available_models(),sep=chr(10))"
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 ROW_CAP = 500
 TIMEOUT_SECONDS = 10
 
